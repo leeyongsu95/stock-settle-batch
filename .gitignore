@@ -20,6 +20,8 @@ buildNumber.properties
 .classpath
 .project
 bin/
+out/
+*.class
 
 # Docker
 .DS_Store
@@ -31,3 +33,10 @@ bin/
 *.mv.db
 *.trace.db
 dump.rdb
+
+# OS
+Thumbs.db
+Desktop.ini
+
+# Logs
+logs/
