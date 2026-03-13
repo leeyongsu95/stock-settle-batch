@@ -9,7 +9,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * Redis 설정 — 중복 진입 방어 + 웹훅 중복 수신 차단용.
+ * Redis 설정 — 주문 중복 방지 + 웹훅 중복 수신 방지용.
  * 단순 키-값만 쓰므로 직렬화는 문자열로 통일. redis-cli로 바로 확인할 수 있어서 편하다.
  */
 @Configuration
