@@ -1,5 +1,8 @@
 package com.trade.member.entity;
 
+import com.trade.common.constants.ChangeType;
+import com.trade.common.constants.RefType;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -16,8 +19,9 @@ public class MemberBalanceHistory {
     @Column(name = "member_key")
     private Long memberKey;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "change_type_cd")
-    private String changeTypeCd;
+    private ChangeType changeTypeCd;
 
     @Column(name = "change_amt")
     private BigDecimal changeAmt;
@@ -31,8 +35,9 @@ public class MemberBalanceHistory {
     @Column(name = "ref_id")
     private Long refId;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "ref_type_cd")
-    private String refTypeCd;
+    private RefType refTypeCd;
 
     @Column(name = "created_at")
     @Temporal(TemporalType.TIMESTAMP)
@@ -45,12 +50,30 @@ public class MemberBalanceHistory {
                                                    Long orderId) {
         MemberBalanceHistory his = new MemberBalanceHistory();
         his.memberKey = memberKey;
-        his.changeTypeCd = "BUY";
+        his.changeTypeCd = ChangeType.BUY;
         his.changeAmt = amount.negate();
         his.beforeBal = beforeBal;
         his.afterBal = afterBal;
         his.refId = orderId;
-        his.refTypeCd = "ORDER";
+        his.refTypeCd = RefType.ORDER;
+        his.createdAt = new Date();
+        return his;
+    }
+
+    /**
+     * 매수 취소 시 예수금 복구 내역 — changeAmt가 양수면 복구, 음수면 차감.
+     */
+    public static MemberBalanceHistory ofBuyRollback(Long memberKey, BigDecimal amount,
+                                                     BigDecimal beforeBal, BigDecimal afterBal,
+                                                     Long orderId) {
+        MemberBalanceHistory his = new MemberBalanceHistory();
+        his.memberKey = memberKey;
+        his.changeTypeCd = ChangeType.BUY;
+        his.changeAmt = amount;
+        his.beforeBal = beforeBal;
+        his.afterBal = afterBal;
+        his.refId = orderId;
+        his.refTypeCd = RefType.ORDER;
         his.createdAt = new Date();
         return his;
     }

@@ -37,11 +37,12 @@ public class OrderService {
         // 2) 트랜잭션: 예수금 잠금 --> 차감 --> 주문 생성
         TradeOrder order = transactionService.execute(request);
 
-        // 3) 트랜잭션 밖에서 증권사 API 호출 — 락 점유 시간에 영향 없음
+        // 3) 트랜잭션 밖에서 증권사 API 호출 — 실패 시 예수금 복구
         try {
             brokerApiClient.sendBuyOrder(order);
         } catch (Exception e) {
-            log.error("증권사 API 호출 실패 — 주문번호: {}", order.getOrderId(), e);
+            log.error("증권사 API 실패, 주문 취소 처리 — 주문번호: {}", order.getOrderId(), e);
+            transactionService.rollback(order.getOrderId(), order.getMemberKey(), order.getTotalAmt());
         }
 
         return OrderResponse.from(order);

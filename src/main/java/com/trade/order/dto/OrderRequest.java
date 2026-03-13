@@ -2,12 +2,15 @@ package com.trade.order.dto;
 
 import java.math.BigDecimal;
 
+/**
+ * 매수 요청 DTO.
+ */
 public class OrderRequest {
 
-    private Long memberKey;
-    private String stockCd;
-    private int quantity;
-    private BigDecimal price;
+    private Long memberKey;        // 회원 고유키
+    private String stockCd;        // 종목 코드
+    private int quantity;          // 주문 수량
+    private BigDecimal price;      // 주문 가격
 
     public Long getMemberKey() { return memberKey; }
     public void setMemberKey(Long memberKey) { this.memberKey = memberKey; }

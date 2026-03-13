@@ -39,4 +39,11 @@ public class MemberBalance {
         }
         this.balance = this.balance.subtract(amount);
     }
+
+    /**
+     * 예수금 복구 — 증권사 API 실패 등으로 주문 취소 시 사용.
+     */
+    public void restore(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
+    }
 }

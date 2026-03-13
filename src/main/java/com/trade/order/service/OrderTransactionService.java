@@ -1,5 +1,6 @@
 package com.trade.order.service;
 
+import com.trade.common.constants.OrderStatus;
 import com.trade.common.exception.BusinessException;
 import com.trade.member.entity.MemberBalance;
 import com.trade.member.entity.MemberBalanceHistory;
@@ -8,6 +9,8 @@ import com.trade.member.repository.MemberBalanceRepository;
 import com.trade.order.dto.OrderRequest;
 import com.trade.order.entity.TradeOrder;
 import com.trade.order.repository.TradeOrderRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +23,8 @@ import java.math.BigDecimal;
  */
 @Service
 public class OrderTransactionService {
+
+    private static final Logger log = LoggerFactory.getLogger(OrderTransactionService.class);
 
     @Autowired
     private MemberBalanceRepository memberBalanceRepository;
@@ -63,5 +68,25 @@ public class OrderTransactionService {
         memberBalanceHistoryRepository.save(history);
 
         return order;
+    }
+
+    /**
+     * 증권사 API 실패 시 보상 처리 — 주문 REJECTED + 예수금 복구.
+     */
+    @Transactional
+    public void rollback(Long orderId, Long memberKey, BigDecimal totalAmt) {
+        TradeOrder order = tradeOrderRepository.findOne(orderId);
+        order.updateStatus(OrderStatus.REJECTED);
+
+        MemberBalance balance = memberBalanceRepository.findByMemberKeyForUpdate(memberKey);
+        BigDecimal beforeBal = balance.getBalance();
+        balance.restore(totalAmt);
+
+        MemberBalanceHistory history = MemberBalanceHistory.ofBuyRollback(
+                memberKey, totalAmt, beforeBal, balance.getBalance(), orderId
+        );
+        memberBalanceHistoryRepository.save(history);
+
+        log.info("주문 취소 및 예수금 복구 완료 — 주문번호: {}, 복구 금액: {}", orderId, totalAmt);
     }
 }

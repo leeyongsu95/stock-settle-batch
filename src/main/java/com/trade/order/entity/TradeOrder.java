@@ -1,5 +1,9 @@
 package com.trade.order.entity;
 
+import com.trade.common.constants.OrderSource;
+import com.trade.common.constants.OrderStatus;
+import com.trade.common.constants.OrderType;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.util.Date;
@@ -19,11 +23,13 @@ public class TradeOrder {
     @Column(name = "stock_cd")
     private String stockCd;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "order_type_cd")
-    private String orderTypeCd;
+    private OrderType orderTypeCd;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "order_src_cd")
-    private String orderSrcCd;
+    private OrderSource orderSrcCd;
 
     @Column(name = "quantity")
     private Integer quantity;
@@ -34,8 +40,9 @@ public class TradeOrder {
     @Column(name = "total_amt")
     private BigDecimal totalAmt;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "order_status_cd")
-    private String orderStatusCd;
+    private OrderStatus orderStatusCd;
 
     @Column(name = "leverage_yn")
     private String leverageYn;
@@ -55,15 +62,22 @@ public class TradeOrder {
         TradeOrder order = new TradeOrder();
         order.memberKey = memberKey;
         order.stockCd = stockCd;
-        order.orderTypeCd = "BUY";
-        order.orderSrcCd = "MANUAL";
+        order.orderTypeCd = OrderType.BUY;
+        order.orderSrcCd = OrderSource.MANUAL;
         order.quantity = quantity;
         order.price = price;
         order.totalAmt = price.multiply(BigDecimal.valueOf(quantity));
-        order.orderStatusCd = "PENDING";
+        order.orderStatusCd = OrderStatus.PENDING;
         order.leverageYn = "N";
         order.orderedAt = new Date();
         return order;
+    }
+
+    public void updateStatus(OrderStatus status) {
+        this.orderStatusCd = status;
+        if (status == OrderStatus.FILLED) {
+            this.filledAt = new Date();
+        }
     }
 
     public Long getOrderId() { return orderId; }
@@ -71,5 +85,5 @@ public class TradeOrder {
     public String getStockCd() { return stockCd; }
     public Integer getQuantity() { return quantity; }
     public BigDecimal getTotalAmt() { return totalAmt; }
-    public String getOrderStatusCd() { return orderStatusCd; }
+    public OrderStatus getOrderStatusCd() { return orderStatusCd; }
 }
