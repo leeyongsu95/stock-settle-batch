@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.trade.settlement.repository.SettlementMapper">
+
+    <!-- 미정산 체결 조회 -->
+    <select id="selectUnsettledExecutions" resultType="com.trade.settlement.dto.ExecutionSettlementDto">
+        SELECT e.exec_seq,
+               e.order_id,
+               e.member_key,
+               e.stock_cd,
+               o.order_type_cd,
+               e.exec_price,
+               e.exec_qty,
+               e.exec_amt,
+               o.leverage_yn,
+               m.commission_rate
+          FROM t_trade_execution e
+          JOIN t_trade_order o ON e.order_id = o.order_id
+          JOIN t_member m ON e.member_key = m.member_key
+         WHERE e.settled_yn = 'N'
+         ORDER BY e.exec_seq
+         LIMIT #{limit}
+    </select>
+
+    <!-- 정산 결과 일괄 삽입 -->
+    <insert id="bulkInsertSettlements">
+        INSERT INTO t_settlement_his
+            (exec_seq, order_id, member_key, settlement_type_cd,
+             settlement_amt, commission_rate, commission, tax, net_amt, leverage_yn)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.execSeq}, #{item.orderId}, #{item.memberKey}, #{item.settlementTypeCd},
+             #{item.settlementAmt}, #{item.commissionRate}, #{item.commission}, #{item.tax}, #{item.netAmt}, #{item.leverageYn})
+        </foreach>
+    </insert>
+
+    <!-- 체결 내역 정산 완료 처리 -->
+    <update id="updateSettledYn">
+        UPDATE t_trade_execution
+           SET settled_yn = 'Y'
+         WHERE exec_seq IN
+        <foreach collection="execSeqs" item="seq" open="(" close=")" separator=",">
+            #{seq}
+        </foreach>
+    </update>
+
+    <!-- 회원 잔고 반영 -->
+    <update id="updateMemberBalance">
+        UPDATE t_member_bal
+           SET balance = balance + #{amount}
+         WHERE member_key = #{memberKey}
+    </update>
+
+    <!-- 회원 현재 잔고 조회 -->
+    <select id="selectMemberBalance" resultType="java.math.BigDecimal">
+        SELECT balance
+          FROM t_member_bal
+         WHERE member_key = #{memberKey}
+    </select>
+
+    <!-- 잔고 변동 이력 INSERT -->
+    <insert id="insertBalanceHistory">
+        INSERT INTO t_member_bal_his
+            (member_key, change_type_cd, change_amt, before_bal, after_bal, ref_id, ref_type_cd)
+        VALUES
+            (#{memberKey}, #{changeTypeCd}, #{changeAmt}, #{beforeBal}, #{afterBal}, #{refId}, #{refTypeCd})
+    </insert>
+
+</mapper>
