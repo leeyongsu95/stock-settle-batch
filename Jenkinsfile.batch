@@ -1,0 +1,43 @@
+pipeline {
+    agent any
+
+    triggers {
+        // 정산 배치: 5분 주기 (장 운영 시간 09:00~15:30)
+        // 반대매매 배치: 장 마감 후 16:00 1회 실행
+        parameterizedCron('''
+            H/5 9-15 * * 1-5 %JOB_NAME=settlementJob
+            0 16 * * 1-5 %JOB_NAME=marginCallJob
+        ''')
+    }
+
+    parameters {
+        choice(
+            name: 'JOB_NAME',
+            choices: ['settlementJob', 'marginCallJob'],
+            description: '실행할 배치 Job'
+        )
+    }
+
+    stages {
+
+        stage('Run Batch') {
+            steps {
+                sh """
+                    docker exec trade-app \
+                        java -cp /usr/local/tomcat/webapps/ROOT/WEB-INF/classes:/usr/local/tomcat/webapps/ROOT/WEB-INF/lib/* \
+                        org.springframework.batch.core.launch.support.CommandLineJobRunner \
+                        com.trade.config.BatchConfig ${params.JOB_NAME}
+                """
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "BATCH SUCCESS - ${params.JOB_NAME}"
+        }
+        failure {
+            echo "BATCH FAILED - ${params.JOB_NAME}"
+        }
+    }
+}
