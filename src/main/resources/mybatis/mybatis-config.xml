@@ -5,7 +5,7 @@
 <configuration>
 
     <settings>
-        <!-- DB 컬럼 snake_case → Java 필드 camelCase 자동 매핑 (일일이 AS 별칭 안 써도 됨) -->
+        <!-- DB 컬럼 snake_case to Java 필드 camelCase 자동 매핑 (일일이 AS 별칭 안 써도 됨) -->
         <setting name="mapUnderscoreToCamelCase" value="true"/>
         <!-- Lazy Loading OFF: 배치에서 예상 못한 N+1 쿼리 터지면 장애 직결이라 명시적으로 끔 -->
         <setting name="lazyLoadingEnabled" value="false"/>

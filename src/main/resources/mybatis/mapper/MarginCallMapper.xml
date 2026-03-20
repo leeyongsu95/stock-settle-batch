@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.trade.margin.repository.MarginCallMapper">
+
+    <!--
+        반대매매 대상 조회: 레버리지 정산 중 due_date 초과 + 보유 주식이 있는 회원.
+        회원별 보유 종목 단위로 조회하여 각각 시장가 매도 주문을 생성한다.
+    -->
+    <select id="selectMarginCallTargets" resultType="com.trade.margin.dto.MarginCallTargetDto">
+        SELECT ms.member_key,
+               ms.stock_cd,
+               ms.quantity       AS hold_qty,
+               ms.avg_price,
+               si.current_price,
+               overdue.overdue_amt
+          FROM t_member_stock ms
+          JOIN t_stock_info si ON ms.stock_cd = si.stock_cd
+          JOIN (
+                SELECT sh.member_key,
+                       SUM(sh.settlement_amt - sh.net_amt) AS overdue_amt
+                  FROM t_settlement_his sh
+                 WHERE sh.leverage_yn = 'Y'
+                   AND sh.due_date &lt; CURDATE()
+                 GROUP BY sh.member_key
+                HAVING overdue_amt > 0
+               ) overdue ON ms.member_key = overdue.member_key
+         WHERE ms.quantity > 0
+           AND NOT EXISTS (
+                SELECT 1
+                  FROM t_trade_order o
+                 WHERE o.member_key = ms.member_key
+                   AND o.stock_cd   = ms.stock_cd
+                   AND o.order_src_cd  = 'MARGIN_CALL'
+                   AND o.order_status_cd = 'PENDING'
+               )
+         ORDER BY overdue.overdue_amt DESC, ms.member_key
+         LIMIT #{limit}
+    </select>
+
+</mapper>

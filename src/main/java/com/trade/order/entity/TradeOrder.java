@@ -73,6 +73,22 @@ public class TradeOrder {
         return order;
     }
 
+    public static TradeOrder createMarginCallOrder(Long memberKey, String stockCd,
+                                                   int quantity, BigDecimal marketPrice) {
+        TradeOrder order = new TradeOrder();
+        order.memberKey = memberKey;
+        order.stockCd = stockCd;
+        order.orderTypeCd = OrderType.SELL;
+        order.orderSrcCd = OrderSource.MARGIN_CALL;
+        order.quantity = quantity;
+        order.price = marketPrice;
+        order.totalAmt = marketPrice.multiply(BigDecimal.valueOf(quantity));
+        order.orderStatusCd = OrderStatus.PENDING;
+        order.leverageYn = "Y";
+        order.orderedAt = new Date();
+        return order;
+    }
+
     public void updateStatus(OrderStatus status) {
         this.orderStatusCd = status;
         if (status == OrderStatus.FILLED) {
